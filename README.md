@@ -47,3 +47,23 @@ The platform is designed as a decoupled monorepo leveraging **Go Workspaces (`go
    git clone https://github.com/nikhil-thorat/fwdly.git
    cd fwdly
 ```
+
+2. **Start the infrastructure:**
+Spin up PostgreSQL, Redis, and Kafka using Docker Compose (manifests in the root directory).
+```bash
+   docker-compose up -d
+```
+
+3. **Run the Go microservices:**
+The backend uses a Go workspace. You can run individual services from the root:
+```bash
+   go run ./services/api-gateway
+   go run ./services/redirect
+```
+
+4. **Run the Nextjs UI:**
+```bash
+   cd ui
+   npm install
+   npm run dev
+```
