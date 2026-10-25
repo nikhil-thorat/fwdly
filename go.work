@@ -1,0 +1,9 @@
+go 1.26.9
+
+use (
+	./pkg
+	./services/analytics
+	./services/api-gateway
+	./services/management
+	./services/redirect
+)
