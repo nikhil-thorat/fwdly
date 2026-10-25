@@ -10,8 +10,8 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_users_id ON urls(id);
-CREATE INDEX idx_users_email ON urls(email);
+CREATE INDEX idx_users_id ON users(id);
+CREATE INDEX idx_users_email ON users(email);
 
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -42,7 +42,7 @@ CREATE INDEX idx_urls_user_id ON urls(user_id);
 CREATE TABLE clicks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     url_id BIGINT REFERENCES urls(id) ON DELETE CASCADE,
-    ip_hash VARCHAR(64), -- Hashed for privacy
+    ip_hash VARCHAR(64),
     user_agent TEXT,
     referer TEXT,
     clicked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
