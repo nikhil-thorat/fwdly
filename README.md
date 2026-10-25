@@ -43,6 +43,7 @@ The platform is designed as a decoupled monorepo leveraging **Go Workspaces (`go
 ### Local Development
 
 1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/nikhil-thorat/fwdly.git](https://github.com/nikhil-thorat/fwdly.git)
+```bash
+   git clone https://github.com/nikhil-thorat/fwdly.git
    cd fwdly
+```
