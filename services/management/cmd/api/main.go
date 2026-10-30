@@ -15,6 +15,8 @@ import (
 )
 
 func main() {
+	logger.Init()
+
 	ctx := context.Background()
 
 	dsn := os.Getenv("DATABASE_URL")
@@ -24,10 +26,12 @@ func main() {
 
 	dbPool, err := database.Connect(ctx, dsn)
 	if err != nil {
-		logger.Info("Database connection error: " + err.Error())
+		logger.Error("failed to connect to database", "error", err)
 		os.Exit(1)
 	}
+
 	defer dbPool.Close()
+	logger.Info("connected to postgresql pool successfully")
 
 	userRepo := repository.NewUserRepo(dbPool)
 	urlRepo := repository.NewURLRepo(dbPool)
@@ -48,8 +52,13 @@ func main() {
 		SubscriptionHandler: subscriptionHandler,
 	})
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+
 	server := &http.Server{
-		Addr:         ":8081",
+		Addr:         ":" + port,
 		Handler:      router,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -57,23 +66,26 @@ func main() {
 	}
 
 	go func() {
+		logger.Info("management service started", "port", port, "env", os.Getenv("APP_ENV"))
 		err := server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
-			logger.Info("Server crash: " + err.Error())
+			logger.Error("management service crashed", "error", err)
 		}
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	<-quit
+	sig := <-quit
+	logger.Info("received shutdown signal, stopping service", "signal", sig.String())
 
-	logger.Info("Shutting down Management Service...")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err = server.Shutdown(shutdownCtx)
 	if err != nil {
-		logger.Info("Forced server shutdown: " + err.Error())
+		logger.Error("forced server shutdown failed", "error", err)
+	} else {
+		logger.Info("management service stopped gracefully")
 	}
 }
