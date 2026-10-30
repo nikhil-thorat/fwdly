@@ -3,15 +3,15 @@ package main
 import (
 	"context"
 	"fwdly/pkg/database"
+	"fwdly/pkg/logger"
 	"fwdly/services/management/internal/handler"
 	"fwdly/services/management/internal/repository"
 	"fwdly/services/management/internal/service"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"os"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 
 	dbPool, err := database.Connect(ctx, dsn)
 	if err != nil {
-		// TODO : logger.Info
+		logger.Info("Database connection error: " + err.Error())
 		os.Exit(1)
 	}
 	defer dbPool.Close()
@@ -59,7 +59,7 @@ func main() {
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
-			// TODO : logger.Info
+			logger.Info("Server crash: " + err.Error())
 		}
 	}()
 
@@ -68,12 +68,12 @@ func main() {
 
 	<-quit
 
-	// TODO : logger.Info
+	logger.Info("Shutting down Management Service...")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err = server.Shutdown(shutdownCtx)
 	if err != nil {
-		// TODO : logger.Info
+		logger.Info("Forced server shutdown: " + err.Error())
 	}
 }
