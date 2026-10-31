@@ -42,11 +42,13 @@ func main() {
 	urlService := service.NewURLService(urlRepo, clickRepo)
 	subscriptionService := service.NewSubscriptionService(subscriptionRepo, userRepo)
 
+	authHandler := handler.NewAuthHandler(userService)
 	userHandler := handler.NewUserHandler(userService)
 	urlHandler := handler.NewURLHandler(urlService)
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
 
 	router := handler.SetupRoutes(handler.RouterConfig{
+		AuthHandler:         authHandler,
 		UserHandler:         userHandler,
 		URLHandler:          urlHandler,
 		SubscriptionHandler: subscriptionHandler,

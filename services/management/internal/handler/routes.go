@@ -10,6 +10,7 @@ import (
 )
 
 type RouterConfig struct {
+	AuthHandler         *AuthHandler
 	UserHandler         *UserHandler
 	URLHandler          *URLHandler
 	SubscriptionHandler *SubscriptionHandler
@@ -33,6 +34,7 @@ func SetupRoutes(cfg RouterConfig) *chi.Mux {
 	r.Use(limiter.Middleware(DynamicPolicy))
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Post("/auth/google", cfg.AuthHandler.HandleGoogleAuth)
 		r.Post("/links", cfg.URLHandler.CreateLink)
 		r.Post("/webhooks/stripe", cfg.SubscriptionHandler.HandleStripeWebhook)
 
