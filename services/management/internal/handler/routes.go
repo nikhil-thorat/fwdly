@@ -1,21 +1,29 @@
 package handler
 
 import (
+	"fwdly/pkg/ratelimit"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/redis/go-redis/v9"
 )
 
 type RouterConfig struct {
 	UserHandler         *UserHandler
 	URLHandler          *URLHandler
 	SubscriptionHandler *SubscriptionHandler
+	RedisClient         *redis.Client
 }
 
 func SetupRoutes(cfg RouterConfig) *chi.Mux {
 	r := chi.NewRouter()
 
+	limiter := ratelimit.NewLimiter(cfg.RedisClient)
+
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	r.Use(limiter.Middleware(DynamicPolicy))
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/links", cfg.URLHandler.CreateLink)
