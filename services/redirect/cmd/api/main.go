@@ -5,6 +5,7 @@ import (
 	"fwdly/pkg/database"
 	"fwdly/pkg/kafka"
 	"fwdly/pkg/logger"
+	"fwdly/pkg/ratelimit"
 	"fwdly/pkg/redis"
 	"fwdly/services/redirect/internal/handler"
 	"fwdly/services/redirect/internal/repository"
@@ -58,7 +59,9 @@ func main() {
 	redirectRepo := repository.NewRedirectRepo(dbPool, rdb)
 	redirectService := service.NewRedirectService(redirectRepo, kafkaProducer)
 	redirectHandler := handler.NewRedirectHandler(redirectService)
-	router := handler.SetupRoutes(redirectHandler)
+
+	limiter := ratelimit.NewLimiter(rdb)
+	router := handler.SetupRoutes(redirectHandler, limiter)
 
 	port := os.Getenv("PORT")
 	if port == "" {

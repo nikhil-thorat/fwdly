@@ -43,6 +43,11 @@ func (l *Limiter) Middleware(keyGenerator KeyFunc) func(http.Handler) http.Handl
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+			if l == nil || l.rdb == nil || keyGenerator == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			identifier, limit, window := keyGenerator(r)
 			if identifier == "" || limit <= 0 {
 				next.ServeHTTP(w, r)
@@ -50,7 +55,6 @@ func (l *Limiter) Middleware(keyGenerator KeyFunc) func(http.Handler) http.Handl
 			}
 
 			redisKey := fmt.Sprintf("ratelimit:%s", identifier)
-
 			now := time.Now().UnixMilli()
 			windowSeconds := int64(window.Seconds())
 
@@ -69,8 +73,15 @@ func (l *Limiter) Middleware(keyGenerator KeyFunc) func(http.Handler) http.Handl
 				return
 			}
 
-			allowed := results[0].(int64) == 1
-			currentCount := results[1].(int64)
+			allowedInt, ok1 := results[0].(int64)
+			currentCount, ok2 := results[1].(int64)
+
+			if !ok1 || !ok2 {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			allowed := allowedInt == 1
 			remaining := max(limit-int(currentCount), 0)
 
 			w.Header().Set("X-RateLimit-Limit", strconv.Itoa(limit))
