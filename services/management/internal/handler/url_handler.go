@@ -38,7 +38,7 @@ func (h *URLHandler) CreateLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"invalid json body"}`, http.StatusBadRequest)
 	}
 
-	user, _ := r.Context().Value("user").(*models.User)
+	user, _ := r.Context().Value(UserContextKey).(*models.User)
 
 	link, err := h.urlService.CreateLink(r.Context(), req.OriginalURL, req.CustomCode, user, req.ExpiresAt)
 	if err != nil {
@@ -61,7 +61,7 @@ func (h *URLHandler) CreateLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *URLHandler) GetUserLinks(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(*models.User)
+	user, ok := r.Context().Value(UserContextKey).(*models.User)
 	if !ok || user == nil {
 		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 		return
@@ -80,7 +80,7 @@ func (h *URLHandler) GetUserLinks(w http.ResponseWriter, r *http.Request) {
 func (h *URLHandler) UpdateLink(w http.ResponseWriter, r *http.Request) {
 	shortCode := chi.URLParam(r, "code")
 
-	user, ok := r.Context().Value("user").(*models.User)
+	user, ok := r.Context().Value(UserContextKey).(*models.User)
 	if !ok || user == nil {
 		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 		return
@@ -111,7 +111,7 @@ func (h *URLHandler) UpdateLink(w http.ResponseWriter, r *http.Request) {
 func (h *URLHandler) DeleteLink(w http.ResponseWriter, r *http.Request) {
 	shortCode := chi.URLParam(r, "code")
 
-	user, ok := r.Context().Value("user").(*models.User)
+	user, ok := r.Context().Value(UserContextKey).(*models.User)
 	if !ok || user == nil {
 		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 		return

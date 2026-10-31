@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fwdly/pkg/ratelimit"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,11 +19,17 @@ type RouterConfig struct {
 func SetupRoutes(cfg RouterConfig) *chi.Mux {
 	r := chi.NewRouter()
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "fwdly-development-secret-key"
+	}
+
 	limiter := ratelimit.NewLimiter(cfg.RedisClient)
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	r.Use(AuthMiddleware(jwtSecret))
 	r.Use(limiter.Middleware(DynamicPolicy))
 
 	r.Route("/api/v1", func(r chi.Router) {

@@ -70,7 +70,7 @@ func (h *SubscriptionHandler) HandleStripeWebhook(w http.ResponseWriter, r *http
 }
 
 func (h *SubscriptionHandler) GetSubscription(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(*models.User)
+	user, ok := r.Context().Value(UserContextKey).(*models.User)
 	if !ok || user == nil {
 		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 		return
