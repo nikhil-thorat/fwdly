@@ -1,7 +1,19 @@
+import { CTA } from "@/components/cta";
+import { Footer } from "@/components/footer";
+import { Hero } from "@/components/hero";
+import { Navbar } from "@/components/navbar";
+import { Pricing } from "@/components/pricing";
+import { Steps } from "@/components/steps";
+
 export default function Home() {
   return (
-    <section className="flex items-center justify-center min-h-screen">
-      <h1>fwdly</h1>
-    </section>
+    <>
+      <Navbar />
+      <Hero />
+      <Steps />
+      <Pricing />
+      <CTA />
+      <Footer />
+    </>
   );
 }
