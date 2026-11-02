@@ -28,7 +28,7 @@ export function Steps() {
     >
       <div className="mx-auto grid max-w-6xl gap-16 px-6 py-20 md:grid-cols-5 md:py-28">
         <div className="md:col-span-2">
-          <h2 className="font-heading text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.05] tracking-[-0.025em]">
+          <h2 className="font-heading text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.05] tracking-tight">
             Three moves. Under a second.
           </h2>
           <p className="mt-4 max-w-sm text-lg leading-relaxed text-muted-foreground">
@@ -42,7 +42,7 @@ export function Steps() {
             <li key={step.title} className="relative pb-10 pl-8 last:pb-0">
               <span
                 aria-hidden="true"
-                className="absolute -left-[5px] top-1.5 size-2.5 border border-signal bg-background"
+                className="absolute -left-1.25 top-1.5 size-2.5 border border-signal bg-background"
               />
               <span className="font-mono text-xs tabular-nums text-muted-foreground">
                 {String(index + 1).padStart(2, "0")}

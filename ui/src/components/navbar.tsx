@@ -40,7 +40,7 @@ export function Navbar() {
               "focus-visible:ring-offset-4 focus-visible:ring-offset-background",
             )}
           >
-            Shorten a link
+            Sign Up
           </Link>
         </div>
       </div>

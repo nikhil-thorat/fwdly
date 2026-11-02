@@ -14,7 +14,13 @@ export function OrbitRing({
       aria-hidden="true"
       className={cn("pointer-events-none", className)}
     >
-      <circle cx="100" cy="100" r="74" stroke="currentColor" strokeWidth="1" />
+      <circle
+        cx="100"
+        cy="100"
+        r="74"
+        stroke="currentColor"
+        strokeWidth="0.5"
+      />
       <circle cx="100" cy="100" r="2" fill="currentColor" />
       <g className={small ? "backdrop-orbit-dot-sm" : "backdrop-orbit-dot"}>
         <circle cx="100" cy="26" r="2.5" className="fill-signal" />

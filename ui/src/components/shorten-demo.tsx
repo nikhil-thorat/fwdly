@@ -103,9 +103,7 @@ export function ShortenDemo() {
         <span
           className={cn(
             "absolute top-1/2 size-1.5 -translate-y-1/2 bg-signal transition-[left,opacity] duration-700 ease-out",
-            isTyping
-              ? "left-0 opacity-0"
-              : "left-[calc(100%-6px)] opacity-100",
+            isTyping ? "left-0 opacity-0" : "left-[calc(100%-6px)] opacity-100",
           )}
         />
         <span className="absolute left-0 top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 border border-border bg-background" />
@@ -115,7 +113,7 @@ export function ShortenDemo() {
       <div
         inert={!isDone}
         className={cn(
-          "flex items-center justify-between gap-3 border-t border-border pt-4 transition-all duration-500",
+          "flex items-center justify-between gap-3 transition-all duration-500",
           isDone ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
         )}
       >

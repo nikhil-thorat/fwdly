@@ -26,7 +26,7 @@ function EdgeRoute({ side }: { side: "left" | "right" }) {
       <path
         d={ROUTE_PATH}
         stroke="currentColor"
-        strokeWidth={1.5}
+        strokeWidth={2}
         strokeDasharray="3 12"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"

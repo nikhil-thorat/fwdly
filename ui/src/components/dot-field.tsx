@@ -5,8 +5,8 @@ import { useEffect, useRef } from "react";
 const SPACING = 40;
 const BASE_RADIUS = 1;
 const MAX_RADIUS = 2;
-const SPOTLIGHT_RADIUS = 400;
-const EDGE_FADE = 150;
+const SPOTLIGHT_RADIUS = 800;
+const EDGE_FADE = 450;
 
 type Rgb = [number, number, number];
 

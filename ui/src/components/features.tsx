@@ -28,7 +28,7 @@ export function Features() {
       <div className="relative max-w-2xl">
         <OrbitRing
           small
-          className="absolute -bottom-10 -left-34 hidden size-34 text-signal/30 xl:block"
+          className="absolute -bottom-10 -left-60 hidden size-64 text-signal/30 xl:block"
         />
         <h2 className="font-heading text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.05] tracking-tight">
           Every link needs three things.

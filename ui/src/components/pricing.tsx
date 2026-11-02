@@ -51,7 +51,7 @@ export function Pricing() {
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-6 py-20 md:py-28">
       <div className="max-w-2xl">
-        <h2 className="font-heading text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.05] tracking-[-0.025em]">
+        <h2 className="font-heading text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.05] tracking-tight">
           Simple pricing
         </h2>
         <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
@@ -65,9 +65,7 @@ export function Pricing() {
             key={plan.name}
             className={cn(
               "group relative isolate flex flex-col overflow-hidden border p-6 md:p-8",
-              plan.featured
-                ? "border-signal bg-card"
-                : "border-border bg-card",
+              plan.featured ? "border-signal bg-card" : "border-border bg-card",
             )}
           >
             {plan.featured ? (
@@ -85,7 +83,7 @@ export function Pricing() {
                   <path
                     d="M-20 250c80 0 80-50 160-50s80-70 200-70"
                     stroke="currentColor"
-                    strokeWidth="1"
+                    strokeWidth="2"
                     strokeDasharray="3 7"
                     strokeLinecap="round"
                     className="pro-route"
