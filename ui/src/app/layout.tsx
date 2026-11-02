@@ -1,23 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Instrument_Sans,
+  JetBrains_Mono,
+} from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geistHeading = Geist({ subsets: ["latin"], variable: "--font-heading" });
-
-const geistSans = Geist({
-  variable: "--font-sans",
+const display = Bricolage_Grotesque({
   subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-mono",
+const body = Instrument_Sans({
   subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const code = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-code",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "fwdly",
-  description: "URL shortening service",
+  title: "fwdly — send links the short way",
+  description:
+    "Paste any URL and get a clean fwdly.link back in a second. No account needed.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -27,12 +38,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn(
         "h-full",
         "antialiased",
-        geistSans.variable,
-        geistMono.variable,
-        geistHeading.variable,
+        display.variable,
+        body.variable,
+        code.variable,
       )}
     >
-      <body className="min-h-full flex flex-col dark">{children}</body>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        {children}
+      </body>
     </html>
   );
 }

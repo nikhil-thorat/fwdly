@@ -1,45 +1,49 @@
 import Link from "next/link";
-import { Button } from "./ui/button";
+import { buttonVariants } from "./ui/button";
+import { Wordmark } from "./wordmark";
+import { cn } from "@/lib/utils";
+
+const links = [
+  { href: "#features", label: "Features" },
+  { href: "#how-it-works", label: "How it works" },
+  { href: "#pricing", label: "Pricing" },
+];
 
 export function Navbar() {
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-        <div className="flex items-center gap-6">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <Link
+          href="/"
+          aria-label="fwdly home"
+          className="rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/70 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+        >
+          <Wordmark />
+        </Link>
+
+        <div className="flex items-center gap-8">
+          <nav className="hidden items-center gap-8 text-sm md:flex">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/70 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
           <Link
-            href="/"
-            className="font-mono text-lg font-semibold tracking-tighter flex items-center gap-1.5"
+            href="#shorten"
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "focus-visible:ring-offset-4 focus-visible:ring-offset-background",
+            )}
           >
-            <span>fwdly</span>
+            Shorten a link
           </Link>
         </div>
-
-        <div className="flex items-center gap-6">
-          <nav className="hidden md:flex items-center gap-6 text-sm">
-            <Link
-              href="#shorten"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Shorten
-            </Link>
-            <Link
-              href="#features"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              How it Works
-            </Link>
-            <Link
-              href="#pricing"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Pricing
-            </Link>
-          </nav>
-          <Button size="sm">
-            <Link href="#shorten">Start Free</Link>
-          </Button>
-        </div>
       </div>
-    </nav>
+    </header>
   );
 }

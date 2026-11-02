@@ -1,30 +1,26 @@
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { Shortener } from "./shortener";
 
 export function CTA() {
   return (
-    <section className="bg-muted/5 border-y border-border">
-      <div className="max-w-6xl mx-auto px-6 py-24">
-        <div className="md:grid md:grid-cols-2 md:gap-16 items-center">
-          <div className="mb-10 md:mb-0">
-            <h2 className="text-3xl font-light tracking-tight">
-              Ready to shorten?
+    <section
+      className="border-t border-border bg-card"
+      style={{
+        backgroundColor:
+          "color-mix(in srgb, var(--card) 40%, var(--background))",
+      }}
+    >
+      <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+        <div className="grid gap-16 md:grid-cols-2 md:items-center md:gap-20">
+          <div>
+            <h2 className="font-heading text-[clamp(2rem,4vw,2.75rem)] font-medium leading-[1.05] tracking-[-0.025em]">
+              One more link?
             </h2>
-            <p className="mt-3 text-muted-foreground">
-              Paste a link right here. No signup, no friction.
+            <p className="mt-4 max-w-sm text-lg leading-relaxed text-muted-foreground">
+              Paste it here and take the short way. The route ends at your
+              destination.
             </p>
           </div>
-          <div>
-            <div className="border border-border p-1 flex items-center gap-2">
-              <Input
-                placeholder="Your long URL"
-                className="ml-4 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-              <Button variant="default" size="lg">
-                Shorten
-              </Button>
-            </div>
-          </div>
+          <Shortener />
         </div>
       </div>
     </section>
