@@ -34,7 +34,7 @@ export function Navbar() {
             ))}
           </nav>
           <Link
-            href="#shorten"
+            href="/auth"
             className={cn(
               buttonVariants({ size: "sm" }),
               "focus-visible:ring-offset-4 focus-visible:ring-offset-background",

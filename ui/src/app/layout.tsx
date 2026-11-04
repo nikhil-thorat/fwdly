@@ -42,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         body.variable,
         code.variable,
       )}
+      data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}

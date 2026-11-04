@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { Button, buttonVariants } from "./ui/button";
+import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
 
 const plans = [
@@ -143,9 +143,15 @@ export function Pricing() {
             </ul>
 
             {plan.featured ? (
-              <Button size="lg" className="mt-8 w-full">
+              <Link
+                href="/auth"
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "mt-8 w-full",
+                )}
+              >
                 {plan.cta}
-              </Button>
+              </Link>
             ) : plan.name === "Guest" ? (
               <Link
                 href="#shorten"
@@ -157,9 +163,15 @@ export function Pricing() {
                 {plan.cta}
               </Link>
             ) : (
-              <Button variant="outline" size="lg" className="mt-8 w-full">
+              <Link
+                href="/auth"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "mt-8 w-full",
+                )}
+              >
                 {plan.cta}
-              </Button>
+              </Link>
             )}
           </article>
         ))}
