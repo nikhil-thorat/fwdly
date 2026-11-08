@@ -14,7 +14,7 @@ export type ShortLink = {
   slug: string;
   shortUrl: string;
   originalUrl: string;
-  clicks: number;
+  clicks: number | null;
   createdAt: string;
   status: LinkStatus;
 };
@@ -29,8 +29,7 @@ export const mockLinks: ShortLink[] = [
     id: "dev-conf-2026",
     slug: "dev-conf-2026",
     shortUrl: "fwdly.link/dev-conf-2026",
-    originalUrl:
-      "https://nikhil-thorat.vercel.app/blog/nextjs-edge-routing",
+    originalUrl: "https://nikhil-thorat.vercel.app/blog/nextjs-edge-routing",
     clicks: 42810,
     createdAt: "Oct 28, 2026",
     status: "active",
@@ -77,8 +76,8 @@ export const mockLinks: ShortLink[] = [
 
 export const clickTrend30: number[] = [
   820, 910, 760, 1020, 1180, 940, 1320, 1490, 1210, 1380, 1650, 1720, 1510,
-  1890, 2040, 1980, 2210, 2100, 2360, 2280, 2540, 2410, 2670, 2890, 2720,
-  3010, 3180, 2950, 3320, 3480,
+  1890, 2040, 1980, 2210, 2100, 2360, 2280, 2540, 2410, 2670, 2890, 2720, 3010,
+  3180, 2950, 3320, 3480,
 ];
 
 export const clickTrend7: number[] = [2720, 3010, 3180, 2950, 3320, 3480, 3610];
@@ -96,10 +95,7 @@ function buildDayLabels(start: Date, count: number): string[] {
 }
 
 export const trendLabels30 = buildDayLabels(new Date(Date.UTC(2026, 9, 5)), 30);
-export const trendLabels7 = buildDayLabels(
-  new Date(Date.UTC(2026, 9, 28)),
-  7,
-);
+export const trendLabels7 = buildDayLabels(new Date(Date.UTC(2026, 9, 28)), 7);
 
 export const referrers: BreakdownItem[] = [
   { label: "github.com", value: 45 },

@@ -1,31 +1,47 @@
-import { getSession } from "next-auth/react";
+export class ApiError extends Error {
+  status: number;
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000";
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
 
 export async function fetchWithAuth<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const session = await getSession();
+  const headers = new Headers(options.headers);
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
-
-  if (session?.accessToken) {
-    headers["Authorization"] = `Bearer ${session.accessToken}`;
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await fetch(endpoint, {
     ...options,
     headers,
+    cache: "no-store",
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || `API Error: ${response.status}`);
+    let message = errorText || `API Error: ${response.status}`;
+
+    try {
+      const parsed = JSON.parse(errorText) as { error?: string };
+      if (parsed.error) {
+        message = parsed.error;
+      }
+    } catch {
+      // Keep the raw response text.
+    }
+
+    throw new ApiError(message, response.status);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;

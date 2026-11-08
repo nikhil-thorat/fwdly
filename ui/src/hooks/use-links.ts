@@ -1,20 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import { fetchWithAuth } from "@/lib/api";
+import type { ApiURL } from "@/lib/api-types";
 import type { ShortLink } from "@/lib/mock-data";
 
-export interface BackendURL {
-  id: number;
-  short_code: string;
-  original_url: string;
-  user_id?: string | null;
-  created_at: string;
-  expires_at?: string | null;
-  clicks?: number; // Calculated or joined from analytics
-}
-
-function mapBackendUrlToShortLink(raw: BackendURL): ShortLink {
+export function mapApiUrlToShortLink(raw: ApiURL): ShortLink {
   const isExpired = raw.expires_at
     ? new Date(raw.expires_at) < new Date()
     : false;
@@ -24,7 +16,7 @@ function mapBackendUrlToShortLink(raw: BackendURL): ShortLink {
     slug: raw.short_code,
     shortUrl: `fwdly.link/${raw.short_code}`,
     originalUrl: raw.original_url,
-    clicks: raw.clicks || 0,
+    clicks: raw.clicks ?? 0,
     createdAt: new Date(raw.created_at).toLocaleDateString("en-US", {
       month: "short",
       day: "2-digit",
@@ -34,48 +26,89 @@ function mapBackendUrlToShortLink(raw: BackendURL): ShortLink {
   };
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function useLinks() {
   const [links, setLinks] = useState<ShortLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchLinks = useCallback(async (): Promise<ShortLink[]> => {
+    const data = await fetchWithAuth<ApiURL[]>("/api/links");
+    return (data ?? []).map(mapApiUrlToShortLink);
+  }, []);
+
   const loadLinks = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
     try {
-      const data = await fetchWithAuth<BackendURL[]>("/api/v1/links");
-      const mapped = (data || []).map(mapBackendUrlToShortLink);
-      setLinks(mapped);
-    } catch (err: any) {
+      setLinks(await fetchLinks());
+    } catch (err) {
       console.error("[useLinks] Failed to fetch links:", err);
-      setError(err.message || "Failed to load links from server.");
+      setError(getErrorMessage(err, "Failed to load links."));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchLinks]);
 
-  const createLink = async (originalUrl: string, customSlug?: string) => {
-    try {
-      const rawNewLink = await fetchWithAuth<BackendURL>("/api/v1/links", {
+  const createLink = useCallback(
+    async (originalUrl: string, customSlug?: string) => {
+      const raw = await fetchWithAuth<ApiURL>("/api/links", {
         method: "POST",
         body: JSON.stringify({
           original_url: originalUrl,
-          short_code: customSlug || undefined,
+          custom_code: customSlug || undefined,
         }),
       });
 
-      const formatted = mapBackendUrlToShortLink(rawNewLink);
+      const formatted = mapApiUrlToShortLink(raw);
       setLinks((prev) => [formatted, ...prev]);
+
       return formatted;
-    } catch (err: any) {
-      console.error("[useLinks] Failed to create link:", err);
-      throw err;
-    }
-  };
+    },
+    [],
+  );
+
+  const deleteLink = useCallback(async (id: string) => {
+    await fetchWithAuth<void>(`/api/links/${id}`, { method: "DELETE" });
+    setLinks((prev) => prev.filter((link) => link.id !== id));
+  }, []);
 
   useEffect(() => {
-    loadLinks();
-  }, [loadLinks]);
+    let cancelled = false;
 
-  return { links, isLoading, error, refetch: loadLinks, createLink };
+    fetchLinks()
+      .then((data) => {
+        if (!cancelled) {
+          setLinks(data);
+        }
+      })
+      .catch((err) => {
+        console.error("[useLinks] Failed to fetch links:", err);
+        if (!cancelled) {
+          setError(getErrorMessage(err, "Failed to load links."));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchLinks]);
+
+  return {
+    links,
+    isLoading,
+    error,
+    refetch: loadLinks,
+    createLink,
+    deleteLink,
+  };
 }

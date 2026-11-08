@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+
+import { cn } from "@/lib/utils";
+import { ProfileMenu } from "./profile-menu";
 import { buttonVariants } from "./ui/button";
 import { Wordmark } from "./wordmark";
-import { cn } from "@/lib/utils";
 
 const links = [
   { href: "#features", label: "Features" },
@@ -10,6 +15,9 @@ const links = [
 ];
 
 export function Navbar() {
+  const { data: session } = useSession();
+  const isAuthenticated = Boolean(session?.user);
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -33,15 +41,19 @@ export function Navbar() {
               </Link>
             ))}
           </nav>
-          <Link
-            href="/auth"
-            className={cn(
-              buttonVariants({ size: "sm" }),
-              "focus-visible:ring-offset-4 focus-visible:ring-offset-background",
-            )}
-          >
-            Sign Up
-          </Link>
+          {isAuthenticated ? (
+            <ProfileMenu showDashboard />
+          ) : (
+            <Link
+              href="/auth"
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "focus-visible:ring-offset-4 focus-visible:ring-offset-background",
+              )}
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
     </header>

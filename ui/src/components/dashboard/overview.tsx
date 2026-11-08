@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import {
   ArrowRight,
   BarChart3,
@@ -12,6 +13,7 @@ import {
   Plus,
   Radio,
   Trash2,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -30,13 +32,12 @@ import {
 import { DashboardTabs } from "./dashboard-tabs";
 import { StatCard } from "./stat-card";
 import {
-  currentUser,
   formatCompact,
   formatNumber,
-  mockLinks,
   type ShortLink,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useLinks } from "@/hooks/use-links";
 
 function GetProCard() {
   return (
@@ -73,15 +74,21 @@ function GetProCard() {
 }
 
 export function DashboardOverview() {
-  const [links, setLinks] = useState<ShortLink[]>(mockLinks);
+  const { data: session } = useSession();
+  const { links, isLoading, error, createLink, deleteLink } = useLinks();
   const [destination, setDestination] = useState("");
   const [alias, setAlias] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const isPro = currentUser.plan === "pro";
+  const isPro = session?.user?.tier === "pro";
   const activeLinks = links.filter((link) => link.status === "active").length;
-  const totalClicks = links.reduce((total, link) => total + link.clicks, 0);
+  const totalClicks = links.reduce(
+    (total, link) => total + (link.clicks ?? 0),
+    0,
+  );
+  const hasClickData = links.some((link) => link.clicks !== null);
 
   const stats: {
     label: string;
@@ -105,17 +112,19 @@ export function DashboardOverview() {
     },
     {
       label: "Total clicks",
-      value: formatCompact(totalClicks),
-      detail: "Across all links",
+      value: hasClickData ? formatCompact(totalClicks) : "—",
+      detail: hasClickData ? "Across all links" : "Not available yet",
       icon: MousePointerClick,
     },
     ...(isPro
       ? [
           {
             label: "Clicks / link",
-            value: formatCompact(
-              Math.round(totalClicks / Math.max(links.length, 1)),
-            ),
+            value: hasClickData
+              ? formatCompact(
+                  Math.round(totalClicks / Math.max(links.length, 1)),
+                )
+              : "—",
             detail: "All-time average",
             icon: BarChart3,
           },
@@ -123,7 +132,7 @@ export function DashboardOverview() {
       : []),
   ];
 
-  function handleCreate(event: React.FormEvent<HTMLFormElement>) {
+  async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!destination.trim()) {
@@ -135,32 +144,22 @@ export function DashboardOverview() {
       ? destination.trim()
       : `https://${destination.trim()}`;
 
-    const rawAlias =
-      alias.trim() || `x${Math.random().toString(36).slice(2, 8)}`;
-    const slug = rawAlias
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
+    setIsSubmitting(true);
+    setMessage("");
 
-    const newLink: ShortLink = {
-      id: `${slug}-${Date.now()}`,
-      slug,
-      shortUrl: `fwdly.link/${slug}`,
-      originalUrl: normalized,
-      clicks: 0,
-      createdAt: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-      }),
-      status: "active",
-    };
-
-    setLinks((current) => [newLink, ...current]);
-    setDestination("");
-    setAlias("");
-    setMessage(`Created ${newLink.shortUrl}`);
+    try {
+      const created = await createLink(
+        normalized,
+        isPro ? alias.trim() || undefined : undefined,
+      );
+      setDestination("");
+      setAlias("");
+      setMessage(`Created ${created.shortUrl}`);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Failed to create link.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function copyLink(link: ShortLink) {
@@ -173,20 +172,32 @@ export function DashboardOverview() {
     }
   }
 
-  function handleDelete(id: string) {
-    setLinks((current) => current.filter((link) => link.id !== id));
+  async function handleDelete(id: string) {
+    try {
+      await deleteLink(id);
+      setMessage("Link deleted.");
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Failed to delete the link.",
+      );
+    }
   }
 
   return (
     <div className="space-y-10">
       <div>
         <h1 className="font-heading text-3xl font-medium leading-none tracking-[-0.035em] md:text-4xl">
-          Welcome back, {currentUser.firstName}.
+          Welcome back, {session?.user?.name?.split(" ")[0] ?? "there"}.
         </h1>
         <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
           Your links, clicks, and traffic at a glance.
         </p>
-        <DashboardTabs className="mt-10" />
+        <DashboardTabs
+          className="mt-10"
+          analyticsHref={
+            links[0] ? `/dashboard/links/${links[0].id}` : undefined
+          }
+        />
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -240,14 +251,23 @@ export function DashboardOverview() {
                   id="alias"
                   value={alias}
                   onChange={(event) => setAlias(event.target.value)}
-                  placeholder="launch-2026"
-                  className="h-full border-0 px-2 font-mono text-sm focus-visible:border-transparent"
+                  placeholder={isPro ? "launch-2026" : "Pro only"}
+                  disabled={!isPro}
+                  className="h-full border-0 px-2 font-mono text-sm focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             </div>
 
-            <Button type="submit" className="h-10 gap-1.5">
-              <Plus aria-hidden="true" className="size-4" />
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-10 gap-1.5"
+            >
+              {isSubmitting ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <Plus aria-hidden="true" className="size-4" />
+              )}
               Create link
             </Button>
           </form>
@@ -287,98 +307,127 @@ export function DashboardOverview() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {links.map((link) => (
-                <TableRow key={link.id}>
-                  <TableCell className="pl-5">
-                    <Link
-                      href={`/dashboard/links/${link.id}`}
-                      className="group inline-flex items-center gap-2 font-mono text-sm text-foreground transition-colors hover:text-signal"
-                    >
-                      <Link2
+              {isLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-12 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2
                         aria-hidden="true"
-                        className="size-3.5 text-muted-foreground transition-colors group-hover:text-signal"
+                        className="size-4 animate-spin text-signal"
                       />
-                      {link.shortUrl}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      title={link.originalUrl}
-                      className="block max-w-[20rem] truncate font-mono text-sm text-muted-foreground"
-                    >
-                      {link.originalUrl}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className="font-mono text-sm tabular-nums">
-                      {formatNumber(link.clicks)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "gap-1.5 text-xs",
-                        link.status === "active"
-                          ? "text-signal"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "size-1.5",
-                          link.status === "active"
-                            ? "bg-signal"
-                            : "bg-muted-foreground",
-                        )}
-                      />
-                      {link.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="pr-5">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => copyLink(link)}
-                        aria-label={`Copy ${link.shortUrl}`}
-                        title="Copy link"
-                      >
-                        {copiedId === link.id ? (
-                          <Check aria-hidden="true" className="text-signal" />
-                        ) : (
-                          <Copy aria-hidden="true" />
-                        )}
-                      </Button>
-                      <Link
-                        href={`/dashboard/links/${link.id}`}
-                        aria-label={`View analytics for ${link.shortUrl}`}
-                        title="View analytics"
-                        className={cn(
-                          buttonVariants({ variant: "ghost", size: "icon-xs" }),
-                        )}
-                      >
-                        <BarChart3 aria-hidden="true" />
-                      </Link>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => handleDelete(link.id)}
-                        aria-label={`Delete ${link.shortUrl}`}
-                        title="Delete link"
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 aria-hidden="true" />
-                      </Button>
+                      <span>Loading links from server...</span>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : error ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-12 text-center font-mono text-xs uppercase tracking-widest text-destructive"
+                  >
+                    {error}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                links.map((link) => (
+                  <TableRow key={link.id}>
+                    <TableCell className="pl-5">
+                      <Link
+                        href={`/dashboard/links/${link.id}`}
+                        className="group inline-flex items-center gap-2 font-mono text-sm text-foreground transition-colors hover:text-signal"
+                      >
+                        <Link2
+                          aria-hidden="true"
+                          className="size-3.5 text-muted-foreground transition-colors group-hover:text-signal"
+                        />
+                        {link.shortUrl}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        title={link.originalUrl}
+                        className="block max-w-[20rem] truncate font-mono text-sm text-muted-foreground"
+                      >
+                        {link.originalUrl}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="font-mono text-sm tabular-nums">
+                        {link.clicks === null ? "—" : formatNumber(link.clicks)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "gap-1.5 text-xs",
+                          link.status === "active"
+                            ? "text-signal"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "size-1.5",
+                            link.status === "active"
+                              ? "bg-signal"
+                              : "bg-muted-foreground",
+                          )}
+                        />
+                        {link.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="pr-5">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => copyLink(link)}
+                          aria-label={`Copy ${link.shortUrl}`}
+                          title="Copy link"
+                        >
+                          {copiedId === link.id ? (
+                            <Check aria-hidden="true" className="text-signal" />
+                          ) : (
+                            <Copy aria-hidden="true" />
+                          )}
+                        </Button>
+                        <Link
+                          href={`/dashboard/links/${link.id}`}
+                          aria-label={`View analytics for ${link.shortUrl}`}
+                          title="View analytics"
+                          className={cn(
+                            buttonVariants({
+                              variant: "ghost",
+                              size: "icon-xs",
+                            }),
+                          )}
+                        >
+                          <BarChart3 aria-hidden="true" />
+                        </Link>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => handleDelete(link.id)}
+                          aria-label={`Delete ${link.shortUrl}`}
+                          title="Delete link"
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
 
-              {links.length === 0 ? (
+              {!isLoading && !error && links.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={5}

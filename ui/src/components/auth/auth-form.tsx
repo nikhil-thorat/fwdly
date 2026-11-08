@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Wordmark } from "@/components/wordmark";
-import { getSession, signIn } from "next-auth/react";
+import { signIn } from "next-auth/react";
 
 function GoogleMark() {
   return (
@@ -41,15 +40,11 @@ export function AuthForm() {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
-
   const handleGoogleSignIn = async () => {
-    console.log("--> [Client] Google sign-in button clicked");
     if (!agreed) return;
     setLoading(true);
     try {
       await signIn("google", { callbackUrl: "/dashboard" });
-      console.log(getSession());
     } catch (error) {
       console.error("Failed to sign in with Google:", error);
       setLoading(false);

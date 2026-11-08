@@ -1,97 +1,90 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import {
   ArrowLeft,
   ArrowUpRight,
   BarChart3,
-  MapPin,
   MousePointerClick,
   Users,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+
+import { CopyButton } from "@/components/shortener";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { ApiClickStats } from "@/lib/api-types";
+import { formatNumber, type ShortLink } from "@/lib/mock-data";
+
 import { ClickChart } from "./click-chart";
 import { StatCard } from "./stat-card";
-import { CopyButton } from "@/components/shortener";
-import {
-  browsers,
-  clickTrend30,
-  clickTrend7,
-  formatNumber,
-  platforms,
-  referrers,
-  trendLabels30,
-  trendLabels7,
-  type BreakdownItem,
-  type ShortLink,
-} from "@/lib/mock-data";
 
-function BreakdownList({
-  title,
-  items,
-}: {
-  title: string;
-  items: BreakdownItem[];
-}) {
-  return (
-    <div>
-      <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-        {title}
-      </p>
-      <div className="mt-5 space-y-5">
-        {items.map((item) => (
-          <div key={item.label}>
-            <div className="flex items-center justify-between gap-4 font-mono text-xs uppercase tracking-wider">
-              <span>{item.label}</span>
-              <span className="text-muted-foreground">{item.value}%</span>
-            </div>
-            <div className="mt-2 h-1.5 bg-muted">
-              <div
-                className="h-full bg-signal"
-                style={{ width: `${item.value}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function buildDailySeries(
+  points: ApiClickStats["time_series"],
+  days: number,
+): { values: number[]; labels: string[] } {
+  const byDate = new Map<string, number>();
+
+  for (const point of points ?? []) {
+    byDate.set(point.date, point.clicks);
+  }
+
+  const values: number[] = [];
+  const labels: string[] = [];
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const day = new Date(today);
+    day.setUTCDate(day.getUTCDate() - offset);
+
+    const key = day.toISOString().slice(0, 10);
+    values.push(byDate.get(key) ?? 0);
+    labels.push(
+      day.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        timeZone: "UTC",
+      }),
+    );
+  }
+
+  return { values, labels };
 }
 
-export function LinkAnalytics({ link }: { link: ShortLink }) {
-  const [enabled, setEnabled] = useState(link.status === "active");
-  const uniqueVisitors = Math.round(link.clicks * 0.735);
+export function LinkAnalytics({
+  link,
+  analytics,
+}: {
+  link: ShortLink;
+  analytics: ApiClickStats;
+}) {
+  const trend30 = buildDailySeries(analytics.time_series, 30);
+  const trend7 = buildDailySeries(analytics.time_series, 7);
+
   const averageDailyClicks = Math.round(
-    clickTrend30.reduce((total, clicks) => total + clicks, 0) /
-      clickTrend30.length,
+    trend30.values.reduce((sum, clicks) => sum + clicks, 0) / 30,
   );
+  const uniquePercent =
+    analytics.total_clicks > 0
+      ? ((analytics.unique_clicks / analytics.total_clicks) * 100).toFixed(1)
+      : "0.0";
+
+  const referrers = analytics.top_referrers ?? [];
+  const referrerTotal = referrers.reduce((sum, item) => sum + item.clicks, 0);
 
   const stats = [
     {
       label: "Total clicks",
-      value: formatNumber(link.clicks),
+      value: formatNumber(analytics.total_clicks),
       detail: "All time",
       icon: MousePointerClick,
       signal: true,
     },
     {
       label: "Unique visitors",
-      value: formatNumber(uniqueVisitors),
-      detail: "73.5% of clicks",
+      value: formatNumber(analytics.unique_clicks),
+      detail: `${uniquePercent}% of clicks`,
       icon: Users,
     },
     {
@@ -99,12 +92,6 @@ export function LinkAnalytics({ link }: { link: ShortLink }) {
       value: formatNumber(averageDailyClicks),
       detail: "Last 30 days",
       icon: BarChart3,
-    },
-    {
-      label: "Top country",
-      value: "India",
-      detail: "38% of visitors",
-      icon: MapPin,
     },
   ];
 
@@ -151,23 +138,29 @@ export function LinkAnalytics({ link }: { link: ShortLink }) {
           </div>
 
           <div className="flex h-10 items-center gap-2 border border-border bg-card px-3">
-            <Switch
-              id="link-enabled"
-              aria-label="Enable link"
-              checked={enabled}
-              onCheckedChange={setEnabled}
-            />
-            <Label
-              htmlFor="link-enabled"
-              className="text-sm font-medium uppercase tracking-widest text-muted-foreground"
+            <Badge
+              variant="secondary"
+              className={
+                link.status === "active"
+                  ? "gap-1.5 text-xs text-signal"
+                  : "gap-1.5 text-xs text-muted-foreground"
+              }
             >
-              {enabled ? "Enabled" : "Disabled"}
-            </Label>
+              <span
+                aria-hidden="true"
+                className={
+                  link.status === "active"
+                    ? "size-1.5 bg-signal"
+                    : "size-1.5 bg-muted-foreground"
+                }
+              />
+              {link.status}
+            </Badge>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
@@ -185,10 +178,10 @@ export function LinkAnalytics({ link }: { link: ShortLink }) {
             </CardHeader>
             <CardContent>
               <TabsContent value="30d" className="mt-0">
-                <ClickChart data={clickTrend30} labels={trendLabels30} />
+                <ClickChart data={trend30.values} labels={trend30.labels} />
               </TabsContent>
               <TabsContent value="7d" className="mt-0">
-                <ClickChart data={clickTrend7} labels={trendLabels7} />
+                <ClickChart data={trend7.values} labels={trend7.labels} />
               </TabsContent>
             </CardContent>
           </Tabs>
@@ -199,30 +192,34 @@ export function LinkAnalytics({ link }: { link: ShortLink }) {
             <CardTitle className="text-base">Referrers</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {referrers.map((item) => (
-              <div key={item.label}>
-                <div className="flex items-center justify-between gap-4 font-mono text-xs uppercase tracking-wider">
-                  <span>{item.label}</span>
-                  <span className="text-muted-foreground">{item.value}%</span>
-                </div>
-                <div className="mt-2 h-1.5 bg-muted">
-                  <div
-                    className="h-full bg-signal"
-                    style={{ width: `${item.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+            {referrers.length === 0 ? (
+              <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                No referrer data yet.
+              </p>
+            ) : (
+              referrers.map((item) => {
+                const percent =
+                  referrerTotal > 0
+                    ? Math.round((item.clicks / referrerTotal) * 100)
+                    : 0;
+                const label = item.referrer.trim() || "Unknown";
 
-        <Card className="border border-border bg-card shadow-none ring-0 lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="text-base">Browsers & platforms</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-10 md:grid-cols-2">
-            <BreakdownList title="Browser" items={browsers} />
-            <BreakdownList title="Platform" items={platforms} />
+                return (
+                  <div key={label}>
+                    <div className="flex items-center justify-between gap-4 font-mono text-xs uppercase tracking-wider">
+                      <span>{label}</span>
+                      <span className="text-muted-foreground">{percent}%</span>
+                    </div>
+                    <div className="mt-2 h-1.5 bg-muted">
+                      <div
+                        className="h-full bg-signal"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </div>

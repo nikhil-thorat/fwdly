@@ -1,5 +1,3 @@
-import { formatNumber } from "@/lib/mock-data";
-
 export function ClickChart({
   data,
   labels,
@@ -7,7 +5,7 @@ export function ClickChart({
   data: number[];
   labels: string[];
 }) {
-  const max = Math.max(...data);
+  const max = Math.max(...data, 1);
 
   return (
     <div>
@@ -28,10 +26,14 @@ export function ClickChart({
         ))}
       </div>
       <div className="mt-3 flex items-center justify-between font-mono text-xs uppercase tracking-wider text-muted-foreground">
-        <span>{labels[0]}</span>
-        <span>{labels[Math.floor(labels.length / 2)]}</span>
-        <span>{labels[labels.length - 1]}</span>
+        <span>{labels[0] ?? "—"}</span>
+        <span>{labels[Math.floor(labels.length / 2)] ?? "—"}</span>
+        <span>{labels[labels.length - 1] ?? "—"}</span>
       </div>
     </div>
   );
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("en-US").format(value);
 }

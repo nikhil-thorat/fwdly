@@ -1,20 +1,59 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ArrowRight, Check, Copy } from "lucide-react";
+import { ArrowRight, Check, Copy, Loader2 } from "lucide-react";
+
+import { fetchWithAuth } from "@/lib/api";
+import type { ApiURL } from "@/lib/api-types";
+import { cn } from "@/lib/utils";
+
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { cn } from "@/lib/utils";
 
 export function Shortener() {
   const id = useId();
+  const [url, setUrl] = useState("");
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const value = url.trim();
+
+    if (!value) {
+      setError("Add a URL first.");
+      return;
+    }
+
+    const normalized = /^https?:\/\//i.test(value)
+      ? value
+      : `https://${value}`;
+
+    setIsSubmitting(true);
+    setError(null);
+    setShortUrl(null);
+
+    try {
+      const link = await fetchWithAuth<ApiURL>("/api/links", {
+        method: "POST",
+        body: JSON.stringify({ original_url: normalized }),
+      });
+
+      setShortUrl(`fwdly.link/${link.short_code}`);
+      setUrl("");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to shorten the link.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
-    <form
-      onSubmit={(event) => event.preventDefault()}
-      noValidate
-      className="max-w-xl"
-    >
+    <form onSubmit={handleSubmit} noValidate className="max-w-xl">
       <label htmlFor={id} className="sr-only">
         Your long URL
       </label>
@@ -24,14 +63,44 @@ export function Shortener() {
           type="url"
           inputMode="url"
           autoComplete="url"
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
           placeholder="Paste a long URL"
           className="ml-2 h-11 flex-1 border-0 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-transparent"
         />
-        <Button type="submit" size="lg" className="shrink-0">
+        <Button
+          type="submit"
+          size="lg"
+          disabled={isSubmitting}
+          className="shrink-0"
+        >
+          {isSubmitting ? (
+            <Loader2 aria-hidden="true" className="animate-spin" />
+          ) : (
+            <ArrowRight aria-hidden="true" />
+          )}
           Shorten
-          <ArrowRight aria-hidden="true" />
         </Button>
       </div>
+
+      {shortUrl ? (
+        <div className="mt-3 flex items-center justify-between gap-3 border border-border bg-card px-3 py-2">
+          <span className="truncate font-mono text-sm text-foreground">
+            {shortUrl}
+          </span>
+          <CopyButton value={`https://${shortUrl}`} />
+        </div>
+      ) : null}
+
+      {error ? (
+        <p
+          aria-live="polite"
+          className="mt-3 font-mono text-xs uppercase tracking-wider text-destructive"
+        >
+          {error}
+        </p>
+      ) : null}
+
       <p className="mt-3 text-sm text-muted-foreground">
         No account needed. Guest links stay live for 7 days.
       </p>

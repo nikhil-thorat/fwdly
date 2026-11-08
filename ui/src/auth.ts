@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: process.env.AUTH_SECRET || "fwdly-development-auth-secret-32-bytes",
+  secret: process.env.AUTH_SECRET || "fwdly-development-auth-secret",
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -16,7 +16,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000";
 
         try {
-          // Pass the id_token and profile info verified by NextAuth
           const res = await fetch(`${apiGatewayUrl}/api/v1/auth/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -31,8 +30,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (res.ok) {
             const data = await res.json();
+            const existingUser = (token.user ?? {}) as Record<string, unknown>;
+            const apiUser = (data.user ?? {}) as Record<string, unknown>;
+
             token.accessToken = data.token;
-            token.user = { ...token.user, ...data.user };
+            token.user = { ...existingUser, ...apiUser };
           }
         } catch (err) {
           console.error("--> [NextAuth Server] Failed to dispatch to Go:", err);
