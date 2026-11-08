@@ -48,7 +48,7 @@ func main() {
 
 	defer rdb.Close()
 
-	kafkaBrokers := []string{os.Getenv("KAFKA_BORKER")}
+	kafkaBrokers := []string{os.Getenv("KAFKA_BROKER")}
 	if kafkaBrokers[0] == "" {
 		kafkaBrokers = []string{"localhost:9092"}
 	}
