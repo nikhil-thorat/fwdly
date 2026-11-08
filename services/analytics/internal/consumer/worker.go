@@ -85,10 +85,14 @@ func (w *AnalyticsWorker) flush(ctx context.Context, events []kafka.ClickEvent) 
 		return
 	}
 
-	count, err := w.writer.BulkInsert(ctx, events)
+	count, skipped, err := w.writer.BulkInsert(ctx, events)
 	if err != nil {
 		logger.Error("failed to flush click events to postgresql", "error", err, "attempted_count", len(events))
 		return
+	}
+
+	if skipped > 0 {
+		logger.Debug("skipped click events for deleted urls", "skipped_count", skipped)
 	}
 
 	logger.Debug("successfully flushed click events batch", "inserted_count", count)

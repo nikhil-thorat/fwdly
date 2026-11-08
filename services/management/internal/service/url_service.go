@@ -5,11 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"fwdly/pkg/base62"
+	"fwdly/pkg/cache"
+	"fwdly/pkg/logger"
 	"fwdly/services/management/internal/models"
 	"fwdly/services/management/internal/repository"
 	"net/url"
 	"regexp"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -21,14 +25,29 @@ var (
 var customCodeRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]{3-30}$`)
 
 type URLService struct {
-	urlRepo   *repository.URLRepo
-	clickRepo *repository.ClickRepo
+	urlRepo     *repository.URLRepo
+	clickRepo   *repository.ClickRepo
+	cacheClient *redis.Client
 }
 
-func NewURLService(urlRepo *repository.URLRepo, clickRepo *repository.ClickRepo) *URLService {
+func NewURLService(urlRepo *repository.URLRepo, clickRepo *repository.ClickRepo, cacheClient *redis.Client) *URLService {
 	return &URLService{
-		urlRepo:   urlRepo,
-		clickRepo: clickRepo,
+		urlRepo:     urlRepo,
+		clickRepo:   clickRepo,
+		cacheClient: cacheClient,
+	}
+}
+
+func (s *URLService) invalidateCache(shortCode string) {
+	if s.cacheClient == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := s.cacheClient.Del(ctx, cache.URLKey(shortCode)).Err(); err != nil {
+		logger.Warn("failed to invalidate url cache", "short_code", shortCode, "error", err)
 	}
 }
 
@@ -96,11 +115,21 @@ func (s *URLService) UpdateLink(ctx context.Context, shortCode, userID, newURL s
 		return ErrInvalidURL
 	}
 
-	return s.urlRepo.UpdateOriginalURL(ctx, shortCode, userID, newURL)
+	if err := s.urlRepo.UpdateOriginalURL(ctx, shortCode, userID, newURL); err != nil {
+		return err
+	}
+
+	s.invalidateCache(shortCode)
+	return nil
 }
 
 func (s *URLService) DeleteLink(ctx context.Context, shortCode, userID string) error {
-	return s.urlRepo.Delete(ctx, shortCode, userID)
+	if err := s.urlRepo.Delete(ctx, shortCode, userID); err != nil {
+		return err
+	}
+
+	s.invalidateCache(shortCode)
+	return nil
 }
 
 func (s *URLService) GetLinkAnalytics(ctx context.Context, urlID uint64) (*models.ClickStats, error) {

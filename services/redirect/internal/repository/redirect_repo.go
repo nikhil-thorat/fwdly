@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"fwdly/pkg/cache"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -26,7 +27,7 @@ func NewRedirectRepo(db *pgxpool.Pool, rdb *redis.Client) *RedirectRepo {
 }
 
 func (r *RedirectRepo) GetOriginalURL(ctx context.Context, shortCode string) (uint64, string, error) {
-	cacheKey := fmt.Sprintf("url:%s", shortCode)
+	cacheKey := cache.URLKey(shortCode)
 
 	cacheVal, err := r.rdb.Get(ctx, cacheKey).Result()
 	if err == nil && cacheVal != "" {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fwdly/pkg/database"
 	"fwdly/pkg/logger"
+	"fwdly/pkg/redis"
 	"fwdly/services/management/internal/handler"
 	"fwdly/services/management/internal/repository"
 	"fwdly/services/management/internal/service"
@@ -33,13 +34,25 @@ func main() {
 	defer dbPool.Close()
 	logger.Info("connected to postgresql pool successfully")
 
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	cacheClient, err := redis.Connect(ctx, redisAddr)
+	if err != nil {
+		logger.Warn("failed to connect to redis; url cache invalidation disabled", "error", err)
+	} else {
+		defer cacheClient.Close()
+	}
+
 	userRepo := repository.NewUserRepo(dbPool)
 	urlRepo := repository.NewURLRepo(dbPool)
 	subscriptionRepo := repository.NewSubscriptionRepo(dbPool)
 	clickRepo := repository.NewClickRepo(dbPool)
 
 	userService := service.NewUserService(userRepo)
-	urlService := service.NewURLService(urlRepo, clickRepo)
+	urlService := service.NewURLService(urlRepo, clickRepo, cacheClient)
 	subscriptionService := service.NewSubscriptionService(subscriptionRepo, userRepo)
 
 	authHandler := handler.NewAuthHandler(userService)
