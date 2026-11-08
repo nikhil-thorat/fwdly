@@ -17,7 +17,7 @@ type AuthHandler struct {
 func NewAuthHandler(userService *service.UserService) *AuthHandler {
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		jwtSecret = "fwdly-development-secret-key-32-bytes"
+		jwtSecret = "fwdly-development-secret-key"
 	}
 
 	return &AuthHandler{

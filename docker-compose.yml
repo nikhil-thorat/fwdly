@@ -89,7 +89,7 @@ services:
       LOG_LEVEL: "debug"
       DATABASE_URL: "postgres://fwdly_user:fwdly_password@postgres:5432/fwdly_db?sslmode=disable"
       REDIS_ADDR: "redis:6379"
-      JWT_SECRET: "fwdly-development-secret-key-32-bytes"
+      JWT_SECRET: "fwdly-development-secret-key"
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
       GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
       GOOGLE_REDIRECT_URL: "http://localhost:3000/api/auth/callback/google"
