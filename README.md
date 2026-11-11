@@ -1,8 +1,8 @@
-# fwdly 🔗
+# fwdly
 
 A high-performance, microservice-based URL shortening service engineered for high throughput, low-latency redirection, and asynchronous analytics.
 
-## 💡 The Origin
+## The Origin
 
 After spending time engineering low-level software from first principles such as custom in-memory databases and version control systems, I wanted to apply those performance-critical concepts to a distributed systems context.
 
@@ -10,7 +10,7 @@ After spending time engineering low-level software from first principles such as
 
 The frontend dashboard strictly adheres to a minimalist design ensuring a professional and uncluttered user experience.
 
-## 🚀 Features & User Tiers
+## Features & User Tiers
 
 fwdly uses Google OAuth for seamless authentication and offers structured access tiers:
 
@@ -18,7 +18,7 @@ fwdly uses Google OAuth for seamless authentication and offers structured access
 * **Basic (Free):** Authenticated users who can create and manage their links via a dashboard. Includes basic click analytics.
 * **Pro ($5/mo):** Premium tier offering unlimited link creation, custom URL aliases (e.g., `fwdly.link/my-brand`), and a detailed real-time analytics dashboard. Subscriptions handled via Stripe.
 
-## 🏗️ Architecture & Tech Stack
+## Architecture & Tech Stack
 
 The platform is designed as a decoupled monorepo leveraging **Go Workspaces (`go.work`)** for the backend and **Next.js** for the frontend, orchestrated via **Docker** and **Kubernetes**.
 
@@ -33,7 +33,7 @@ The platform is designed as a decoupled monorepo leveraging **Go Workspaces (`go
 * **Redis:** Caches hot URL mappings to minimize database read pressure and manages distributed rate limiting.
 * **Kafka:** Acts as the central message broker. The Redirect Service fires asynchronous, fire-and-forget click events to Kafka, ensuring zero added latency to the user's redirect experience.
 
-## 🛠️ Project Setup
+## Project Setup
 
 ### Prerequisites
 * [Go 1.21+](https://go.dev/)
